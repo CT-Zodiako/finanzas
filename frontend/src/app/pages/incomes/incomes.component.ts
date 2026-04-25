@@ -12,48 +12,44 @@ import { parseNumber } from '../../utils/number.utils';
   template: `
     <div class="incomes">
       <header class="incomes__header">
-        <h1>Ingresos</h1>
-        <span class="total">Total: {{ formatCurrency(incomeService.totalIncome()) }}</span>
+        <div>
+          <h1>Ingresos</h1>
+          <p class="subtitle">Registra y gestiona tus fuentes de ingreso</p>
+        </div>
+        <div class="header-metric">
+          <span class="metric-label">Total mensual</span>
+          <strong>{{ formatCurrency(incomeService.totalIncome()) }}</strong>
+        </div>
       </header>
 
       <form class="form" (ngSubmit)="isEditing() ? updateIncome() : createIncome()">
-        <div class="form__row">
-          <input 
-            type="text" 
-            [(ngModel)]="formData.name" 
-            name="name" 
-            placeholder="Nombre del ingreso"
-            required
-          />
-          <input 
-            type="number" 
-            [(ngModel)]="formData.amount" 
-            name="amount" 
-            placeholder="Monto"
-            step="0.01"
-            required
-          />
+        <label>
+          <span class="label-text">Nombre</span>
+          <input type="text" [(ngModel)]="formData.name" name="name" required />
+        </label>
+        <label>
+          <span class="label-text">Monto</span>
+          <input type="number" [(ngModel)]="formData.amount" name="amount" step="0.01" required />
+        </label>
+        <label>
+          <span class="label-text">Frecuencia</span>
           <select [(ngModel)]="formData.frequency" name="frequency">
             <option value="monthly">Mensual</option>
             <option value="biweekly">Quincenal</option>
             <option value="weekly">Semanal</option>
             <option value="daily">Diario</option>
           </select>
-        </div>
-        <div class="form__row">
-          <input 
-            type="text" 
-            [(ngModel)]="formData.category" 
-            name="category" 
-            placeholder="Categoría (opcional)"
-          />
-          <label class="checkbox">
-            <input type="checkbox" [(ngModel)]="formData.is_recurring" name="is_recurring" />
-            <span>Recurrente</span>
-          </label>
-          <button type="submit" class="btn btn--primary">
-            {{ isEditing() ? 'Actualizar' : 'Agregar' }}
-          </button>
+        </label>
+        <label>
+          <span class="label-text">Categoría</span>
+          <input type="text" [(ngModel)]="formData.category" name="category" placeholder="Trabajo, inversión, etc." />
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" [(ngModel)]="formData.is_recurring" name="is_recurring" />
+          <span>Recurrente</span>
+        </label>
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary">{{ isEditing() ? 'Actualizar' : 'Agregar' }}</button>
           @if (isEditing()) {
             <button type="button" class="btn btn--secondary" (click)="cancelEdit()">Cancelar</button>
           }
@@ -61,253 +57,92 @@ import { parseNumber } from '../../utils/number.utils';
       </form>
 
       @if (incomeService.loading()) {
-        <div class="loading">
-          <div class="spinner"></div>
-        </div>
+        <div class="loading">Cargando...</div>
       } @else if (incomeService.incomes().length === 0) {
-        <div class="empty">
-          <p>No hay ingresos registrados</p>
-        </div>
+        <div class="empty">No hay ingresos registrados</div>
       } @else {
-        <div class="list">
+        <section class="cards">
           @for (income of incomeService.incomes(); track income.id) {
-            <div class="item">
-              <div class="item__info">
-                <span class="item__name">{{ income.name }}</span>
-                <span class="item__category">{{ income.category || 'Sin categoría' }}</span>
+            <article class="card" [class.card--inactive]="!income.is_recurring">
+              <header class="card__header">
+                <div>
+                  <p class="card__title">{{ income.name }}</p>
+                  <p class="card__due">{{ income.category || 'Sin categoría' }}</p>
+                </div>
+                <span class="chip" [class.chip--ok]="income.is_recurring" [class.chip--off]="!income.is_recurring">
+                  {{ income.is_recurring ? 'Recurrente' : 'Variable' }}
+                </span>
+              </header>
+
+              <div class="kpi-large">
+                <span>{{ frequencyLabel(income.frequency) }}</span>
+                <strong>{{ formatCurrency(income.amount) }}</strong>
               </div>
-              <div class="item__meta">
-                <span class="item__frequency">{{ frequencyLabel(income.frequency) }}</span>
-                <span class="item__amount">{{ formatCurrency(income.amount) }}</span>
+
+              <div class="card__actions">
+                <button class="btn btn--secondary" (click)="editIncome(income)">Editar</button>
+                <button class="btn btn--danger" (click)="deleteIncome(income.id!)">Eliminar</button>
               </div>
-              <div class="item__actions">
-                <button class="btn-icon" (click)="editIncome(income)" title="Editar">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                </button>
-                <button class="btn-icon btn-icon--danger" (click)="deleteIncome(income.id!)" title="Eliminar">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"/>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
+            </article>
           }
-        </div>
+        </section>
       }
     </div>
   `,
   styles: [`
-    .incomes {
-      padding: 2rem;
-      max-width: 1000px;
-      margin: 0 auto;
+    .incomes { padding: var(--space-md); max-width: 1100px; margin: 0 auto; 
+      @media (min-width: 768px) { padding: var(--space-xl); }
     }
-
-    .incomes__header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
+    .incomes__header { display: flex; flex-direction: column; gap: var(--space-md); margin-bottom: var(--space-lg);
+      @media (min-width: 768px) { flex-direction: row; justify-content: space-between; align-items: flex-end; }
     }
-
-    .incomes__header h1 {
-      font-size: 2rem;
-      font-weight: 600;
-      color: var(--text-primary);
+    h1 { margin: 0; color: var(--text-primary); font-size: 1.5rem; 
+      @media (min-width: 768px) { font-size: 2rem; }
     }
-
-    .total {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--accent);
-    }
+    .subtitle { margin: 0.25rem 0 0; color: var(--text-secondary); font-size: 0.875rem; }
+    .header-metric { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem 1rem; text-align: right; }
+    .metric-label { display: block; font-size: 0.75rem; color: var(--text-secondary); }
+    .header-metric strong { color: var(--accent); font-size: 1.25rem; }
 
     .form {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .form__row {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-    }
-
-    .form__row:last-child {
-      margin-bottom: 0;
-    }
-
-    .form input, .form select {
-      flex: 1;
-      min-width: 150px;
-      padding: 0.75rem 1rem;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text-primary);
-      font-size: 0.9375rem;
-    }
-
-    .form input::placeholder {
-      color: var(--text-secondary);
-    }
-
-    .form input:focus, .form select:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(0, 255, 163, 0.1);
-    }
-
-    .checkbox {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1rem;
-      cursor: pointer;
-    }
-
-    .checkbox input {
-      width: 18px;
-      height: 18px;
-      accent-color: var(--accent);
-    }
-
-    .btn {
-      padding: 0.75rem 1.5rem;
-      border-radius: 10px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      border: none;
-    }
-
-    .btn--primary {
-      background: var(--accent);
-      color: var(--bg);
-    }
-
-    .btn--primary:hover {
-      background: var(--accent-hover);
-    }
-
-    .btn--secondary {
-      background: var(--surface-hover);
-      color: var(--text-primary);
-    }
-
-    .loading, .empty {
-      display: flex;
-      justify-content: center;
-      padding: 4rem;
-      color: var(--text-secondary);
-    }
-
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .list {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 0.75rem;
-    }
-
-    .item {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 1.25rem;
-      background: var(--surface);
+      background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 85%, var(--bg)));
       border: 1px solid var(--border);
-      border-radius: 12px;
-      transition: all 0.2s;
+      border-radius: 14px;
+      padding: 1rem;
+      margin-bottom: var(--space-lg);
     }
+    .label-text { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 0.25rem; }
+    input, select { width: 100%; padding: 0.65rem 0.8rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text-primary); font-size: 0.9375rem; }
+    input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0, 255, 163, 0.1); }
+    .checkbox { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0; }
+    .checkbox input { width: auto; }
+    .form-actions { grid-column: 1 / -1; display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
-    .item:hover {
-      border-color: var(--border-hover);
-    }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.9rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1rem; display: grid; gap: 0.8rem; }
+    .card--inactive { opacity: 0.6; }
+    .card__header { display: flex; justify-content: space-between; align-items: start; }
+    .card__title { margin: 0; font-weight: 700; color: var(--text-primary); font-size: 1.125rem; }
+    .card__due { margin: 0.2rem 0 0; color: var(--text-secondary); font-size: 0.85rem; }
+    .chip { padding: 0.2rem 0.55rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+    .chip--ok { background: rgba(0, 255, 163, 0.15); color: var(--accent); }
+    .chip--off { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
 
-    .item__info {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
+    .kpi-large { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; text-align: center; }
+    .kpi-large span { display: block; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; }
+    .kpi-large strong { display: block; font-size: 1.5rem; color: var(--accent); margin-top: 0.25rem; }
 
-    .item__name {
-      font-weight: 500;
-      color: var(--text-primary);
-    }
+    .card__actions { display: flex; gap: 0.45rem; flex-wrap: wrap; }
+    .btn { padding: 0.55rem 0.85rem; border-radius: 8px; border: none; cursor: pointer; font-weight: 500; }
+    .btn--primary { background: var(--accent); color: var(--bg); }
+    .btn--primary:hover { background: var(--accent-hover); }
+    .btn--secondary { background: var(--surface-hover); color: var(--text-primary); }
+    .btn--danger { background: rgba(239,68,68,0.15); color: var(--danger); }
 
-    .item__category {
-      font-size: 0.8125rem;
-      color: var(--text-secondary);
-    }
-
-    .item__meta {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 0.25rem;
-    }
-
-    .item__frequency {
-      font-size: 0.8125rem;
-      color: var(--text-secondary);
-      text-transform: capitalize;
-    }
-
-    .item__amount {
-      font-weight: 600;
-      color: var(--accent);
-    }
-
-    .item__actions {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .btn-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text-secondary);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s;
-    }
-
-    .btn-icon:hover {
-      background: var(--surface-hover);
-      color: var(--text-primary);
-    }
-
-    .btn-icon--danger:hover {
-      background: rgba(239, 68, 68, 0.1);
-      color: var(--danger);
-      border-color: var(--danger);
-    }
+    .loading, .empty { color: var(--text-secondary); padding: 2rem; text-align: center; }
   `]
 })
 export class IncomesComponent implements OnInit {

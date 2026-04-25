@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DailyExpenseService } from '../../services/daily-expense.service';
 import { DailyExpense, DailyExpenseCreate } from '../../models/daily-expense.model';
+import { parseNumber } from '../../utils/number.utils';
 
 @Component({
   selector: 'app-daily-expenses',
@@ -11,44 +12,35 @@ import { DailyExpense, DailyExpenseCreate } from '../../models/daily-expense.mod
   template: `
     <div class="expenses">
       <header class="expenses__header">
-        <h1>Gastos Diarios</h1>
-        <span class="total">Total: {{ formatCurrency(dailyExpenseService.totalExpenses()) }}</span>
+        <div>
+          <h1>Gastos Diarios</h1>
+          <p class="subtitle">Registra tus gastos cotidianos</p>
+        </div>
+        <div class="header-metric">
+          <span class="metric-label">Total del día/mes</span>
+          <strong>{{ formatCurrency(dailyExpenseService.totalExpenses()) }}</strong>
+        </div>
       </header>
 
       <form class="form" (ngSubmit)="isEditing() ? updateExpense() : createExpense()">
-        <div class="form__row">
-          <input 
-            type="text" 
-            [(ngModel)]="formData.description" 
-            name="description" 
-            placeholder="Descripción"
-            required
-          />
-          <input 
-            type="number" 
-            [(ngModel)]="formData.amount" 
-            name="amount" 
-            placeholder="Monto"
-            step="0.01"
-            required
-          />
-        </div>
-        <div class="form__row">
-          <input 
-            type="text" 
-            [(ngModel)]="formData.category" 
-            name="category" 
-            placeholder="Categoría (opcional)"
-          />
-          <input 
-            type="date" 
-            [(ngModel)]="formData.date" 
-            name="date"
-            required
-          />
-          <button type="submit" class="btn btn--primary">
-            {{ isEditing() ? 'Actualizar' : 'Agregar' }}
-          </button>
+        <label>
+          <span class="label-text">Descripción</span>
+          <input type="text" [(ngModel)]="formData.description" name="description" required />
+        </label>
+        <label>
+          <span class="label-text">Monto</span>
+          <input type="number" [(ngModel)]="formData.amount" name="amount" step="0.01" required />
+        </label>
+        <label>
+          <span class="label-text">Categoría</span>
+          <input type="text" [(ngModel)]="formData.category" name="category" placeholder="Comida, transporte, etc." />
+        </label>
+        <label>
+          <span class="label-text">Fecha</span>
+          <input type="date" [(ngModel)]="formData.date" name="date" required />
+        </label>
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary">{{ isEditing() ? 'Actualizar' : 'Agregar' }}</button>
           @if (isEditing()) {
             <button type="button" class="btn btn--secondary" (click)="cancelEdit()">Cancelar</button>
           }
@@ -56,233 +48,83 @@ import { DailyExpense, DailyExpenseCreate } from '../../models/daily-expense.mod
       </form>
 
       @if (dailyExpenseService.loading()) {
-        <div class="loading">
-          <div class="spinner"></div>
-        </div>
+        <div class="loading">Cargando...</div>
       } @else if (dailyExpenseService.expenses().length === 0) {
-        <div class="empty">
-          <p>No hay gastos diarios registrados</p>
-        </div>
+        <div class="empty">No hay gastos diarios registrados</div>
       } @else {
-        <div class="list">
+        <section class="cards">
           @for (expense of dailyExpenseService.expenses(); track expense.id) {
-            <div class="item">
-              <div class="item__info">
-                <span class="item__description">{{ expense.description }}</span>
-                <div class="item__meta">
-                  <span class="item__category">{{ expense.category || 'Sin categoría' }}</span>
-                  <span class="item__date">{{ formatDate(expense.date) }}</span>
+            <article class="card">
+              <header class="card__header">
+                <div>
+                  <p class="card__title">{{ expense.description }}</p>
+                  <p class="card__due">{{ expense.category || 'Sin categoría' }} • {{ formatDate(expense.date) }}</p>
                 </div>
+              </header>
+
+              <div class="kpi-large">
+                <span>{{ formatDate(expense.date) }}</span>
+                <strong>{{ formatCurrency(expense.amount) }}</strong>
               </div>
-              <span class="item__amount">{{ formatCurrency(expense.amount) }}</span>
-              <div class="item__actions">
-                <button class="btn-icon" (click)="editExpense(expense)" title="Editar">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                </button>
-                <button class="btn-icon btn-icon--danger" (click)="deleteExpense(expense.id!)" title="Eliminar">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"/>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                  </svg>
-                </button>
+
+              <div class="card__actions">
+                <button class="btn btn--secondary" (click)="editExpense(expense)">Editar</button>
+                <button class="btn btn--danger" (click)="deleteExpense(expense.id!)">Eliminar</button>
               </div>
-            </div>
+            </article>
           }
-        </div>
+        </section>
       }
     </div>
   `,
   styles: [`
-    .expenses {
-      padding: 2rem;
-      max-width: 1000px;
-      margin: 0 auto;
+    .expenses { padding: var(--space-md); max-width: 1100px; margin: 0 auto; 
+      @media (min-width: 768px) { padding: var(--space-xl); }
     }
-
-    .expenses__header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
+    .expenses__header { display: flex; flex-direction: column; gap: var(--space-md); margin-bottom: var(--space-lg);
+      @media (min-width: 768px) { flex-direction: row; justify-content: space-between; align-items: flex-end; }
     }
-
-    .expenses__header h1 {
-      font-size: 2rem;
-      font-weight: 600;
-      color: var(--text-primary);
+    h1 { margin: 0; color: var(--text-primary); font-size: 1.5rem; 
+      @media (min-width: 768px) { font-size: 2rem; }
     }
-
-    .total {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--danger);
-    }
+    .subtitle { margin: 0.25rem 0 0; color: var(--text-secondary); font-size: 0.875rem; }
+    .header-metric { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem 1rem; text-align: right; }
+    .metric-label { display: block; font-size: 0.75rem; color: var(--text-secondary); }
+    .header-metric strong { color: var(--danger); font-size: 1.25rem; }
 
     .form {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .form__row {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-    }
-
-    .form__row:last-child {
-      margin-bottom: 0;
-    }
-
-    .form input {
-      flex: 1;
-      min-width: 150px;
-      padding: 0.75rem 1rem;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text-primary);
-      font-size: 0.9375rem;
-    }
-
-    .form input::placeholder {
-      color: var(--text-secondary);
-    }
-
-    .form input[type="date"] {
-      color-scheme: dark;
-    }
-
-    .form input:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(0, 255, 163, 0.1);
-    }
-
-    .btn {
-      padding: 0.75rem 1.5rem;
-      border-radius: 10px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      border: none;
-    }
-
-    .btn--primary {
-      background: var(--accent);
-      color: var(--bg);
-    }
-
-    .btn--primary:hover {
-      background: var(--accent-hover);
-    }
-
-    .btn--secondary {
-      background: var(--surface-hover);
-      color: var(--text-primary);
-    }
-
-    .loading, .empty {
-      display: flex;
-      justify-content: center;
-      padding: 4rem;
-      color: var(--text-secondary);
-    }
-
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid var(--border);
-      border-top-color: var(--danger);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .list {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 0.75rem;
-    }
-
-    .item {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 1.25rem;
-      background: var(--surface);
+      background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 85%, var(--bg)));
       border: 1px solid var(--border);
-      border-radius: 12px;
-      transition: all 0.2s;
+      border-radius: 14px;
+      padding: 1rem;
+      margin-bottom: var(--space-lg);
     }
+    .label-text { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 0.25rem; }
+    input, select { width: 100%; padding: 0.65rem 0.8rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text-primary); font-size: 0.9375rem; }
+    input:focus { outline: none; border-color: var(--danger); box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1); }
+    .form-actions { grid-column: 1 / -1; display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
-    .item:hover {
-      border-color: var(--border-hover);
-    }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.9rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1rem; display: grid; gap: 0.8rem; }
+    .card__header { display: flex; justify-content: space-between; align-items: start; }
+    .card__title { margin: 0; font-weight: 700; color: var(--text-primary); font-size: 1.125rem; }
+    .card__due { margin: 0.2rem 0 0; color: var(--text-secondary); font-size: 0.85rem; }
 
-    .item__info {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
+    .kpi-large { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; text-align: center; }
+    .kpi-large span { display: block; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; }
+    .kpi-large strong { display: block; font-size: 1.5rem; color: var(--danger); margin-top: 0.25rem; }
 
-    .item__description {
-      font-weight: 500;
-      color: var(--text-primary);
-    }
+    .card__actions { display: flex; gap: 0.45rem; flex-wrap: wrap; }
+    .btn { padding: 0.55rem 0.85rem; border-radius: 8px; border: none; cursor: pointer; font-weight: 500; }
+    .btn--primary { background: var(--danger); color: #fff; }
+    .btn--primary:hover { background: #e55a5a; }
+    .btn--secondary { background: var(--surface-hover); color: var(--text-primary); }
+    .btn--danger { background: rgba(239,68,68,0.15); color: var(--danger); }
 
-    .item__meta {
-      display: flex;
-      gap: 1rem;
-      font-size: 0.8125rem;
-      color: var(--text-secondary);
-    }
-
-    .item__amount {
-      font-weight: 600;
-      color: var(--danger);
-      font-size: 1.125rem;
-    }
-
-    .item__actions {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .btn-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text-secondary);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s;
-    }
-
-    .btn-icon:hover {
-      background: var(--surface-hover);
-      color: var(--text-primary);
-    }
-
-    .btn-icon--danger:hover {
-      background: rgba(239, 68, 68, 0.1);
-      color: var(--danger);
-      border-color: var(--danger);
-    }
+    .loading, .empty { color: var(--text-secondary); padding: 2rem; text-align: center; }
   `]
 })
 export class DailyExpensesComponent implements OnInit {
@@ -299,16 +141,17 @@ export class DailyExpensesComponent implements OnInit {
   isEditing = () => this.editingId() !== null;
 
   getEmptyForm(): DailyExpenseCreate {
+    const today = new Date().toISOString().split('T')[0];
     return {
       description: '',
       amount: 0,
       category: '',
-      date: new Date().toISOString().split('T')[0]
+      date: today
     };
   }
 
   createExpense() {
-    if (!this.formData.description || this.formData.amount <= 0 || !this.formData.date) return;
+    if (!this.formData.description || (this.formData.amount || 0) <= 0) return;
     
     this.dailyExpenseService.createExpense(this.formData).subscribe({
       next: () => this.resetForm()
@@ -319,8 +162,8 @@ export class DailyExpensesComponent implements OnInit {
     this.editingId.set(expense.id!);
     this.formData = {
       description: expense.description,
-      amount: Number(expense.amount),
-      category: expense.category,
+      amount: parseNumber(expense.amount),
+      category: expense.category || '',
       date: expense.date
     };
   }
@@ -330,9 +173,7 @@ export class DailyExpensesComponent implements OnInit {
     if (!id) return;
 
     this.dailyExpenseService.updateExpense(id, this.formData).subscribe({
-      next: () => {
-        this.cancelEdit();
-      }
+      next: () => this.cancelEdit()
     });
   }
 
@@ -351,19 +192,16 @@ export class DailyExpensesComponent implements OnInit {
     this.formData = this.getEmptyForm();
   }
 
-  formatDate(dateStr: string): string {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('es-MX', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
+  formatDate(date: string | null): string {
+    if (!date) return 'Sin fecha';
+    const d = new Date(date);
+    return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
   }
 
   formatCurrency(value: number | string): string {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP'
-    }).format(Number(value));
+    }).format(Number(value || 0));
   }
 }
