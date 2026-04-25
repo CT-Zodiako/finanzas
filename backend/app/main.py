@@ -7,6 +7,7 @@ from pathlib import Path
 from app.api.v1.router import api_router
 from app.core.database import init_db
 from app.core.config import settings
+from app.seed import seed_database_if_empty
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -29,6 +30,8 @@ app.include_router(api_router, prefix="/api")
 @app.on_event("startup")
 def startup_event():
     init_db()
+    # Cargar datos iniciales si la DB está vacía
+    seed_database_if_empty()
 
 
 @app.get("/health")
