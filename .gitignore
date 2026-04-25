@@ -32,6 +32,7 @@ backend/venv/
 *.sqlite
 *.sqlite3
 finanzas.db
+*.db.backup
 
 # Node
 node_modules/
@@ -58,6 +59,7 @@ Thumbs.db
 # Logs
 *.log
 logs/
+server.log
 
 # Environment
 .env
@@ -81,3 +83,8 @@ coverage/
 # Temporary
 tmp/
 temp/
+
+# Agents y skills locales (no subir a git)
+.agents/
+.atl/
+skills-lock.json
