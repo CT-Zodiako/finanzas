@@ -94,13 +94,14 @@ def ensure_bootstrap_user_and_backfill() -> None:
     try:
         # 1. Agregar columnas user_id si no existen (migración automática)
         from sqlalchemy import text
-        with db.connection() as conn:
-            for table in ["incomes", "debts", "fixed_expenses", "daily_expenses"]:
-                try:
-                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN user_id INTEGER"))
-                except Exception:
-                    pass  # Ya existe
-            conn.commit()
+        conn = db.connection()
+        for table in ["incomes", "debts", "fixed_expenses", "daily_expenses"]:
+            try:
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN user_id INTEGER"))
+            except Exception:
+                pass  # Ya existe
+        conn.commit()
+        conn.close()  # cerrar raw connection para no interferir con session
 
         user = db.query(User).filter(User.email == "cristianjvz98@gmail.com").first()
         if not user:
