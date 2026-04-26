@@ -90,19 +90,22 @@ def seed_database_if_empty(db_path: str = "finanzas.db"):
 
 def ensure_bootstrap_user_and_backfill() -> None:
     """Crea usuario Cristian y asigna user_id a datos legacy sin dueño."""
+    # 1. Agregar columnas user_id si no existen (migración con sqlite3 directo)
+    import sqlite3, os
+    db_path = os.path.join(os.path.dirname(__file__), "..", "finanzas.db")
+    conn_sqlite = sqlite3.connect(db_path)
+    cursor = conn_sqlite.cursor()
+    for table in ["incomes", "debts", "fixed_expenses", "daily_expenses"]:
+        try:
+            cursor.execute(f"ALTER TABLE {table} ADD COLUMN user_id INTEGER")
+        except sqlite3.OperationalError:
+            pass  # Ya existe
+    conn_sqlite.commit()
+    conn_sqlite.close()
+
+    # 2. Crear usuario y asignar datos con SQLAlchemy session
     db = SessionLocal()
     try:
-        # 1. Agregar columnas user_id si no existen (migración automática)
-        from sqlalchemy import text
-        conn = db.connection()
-        for table in ["incomes", "debts", "fixed_expenses", "daily_expenses"]:
-            try:
-                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN user_id INTEGER"))
-            except Exception:
-                pass  # Ya existe
-        conn.commit()
-        conn.close()  # cerrar raw connection para no interferir con session
-
         user = db.query(User).filter(User.email == "cristianjvz98@gmail.com").first()
         if not user:
             user = User(
