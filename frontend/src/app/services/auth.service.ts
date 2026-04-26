@@ -69,10 +69,11 @@ export class AuthService {
     );
   }
 
-  logout(): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/logout`, {}).pipe(
-      tap(() => this.clearSession())
-    );
+  logout(): void {
+    this.http.post<void>(`${this.apiUrl}/logout`, {}).subscribe({
+      next: () => this.clearSession(),
+      error: () => this.clearSession(), // igual limpiamos aunque falle
+    });
   }
 
   clearSession(): void {
