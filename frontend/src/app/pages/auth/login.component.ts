@@ -35,8 +35,8 @@ import { AuthService } from '../../services/auth.service';
     </div>
   `,
   styles: [`
-    .auth-page { display: grid; place-items: center; min-height: calc(100vh - 60px); }
-    .auth-card { width: min(420px, 92vw); display: grid; gap: 12px; padding: 24px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+    .auth-page { display: grid; place-items: center; min-height: 100vh; padding: 16px; }
+    .auth-card { width: 100%; max-width: 420px; display: grid; gap: 12px; padding: 24px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
     label { display: grid; gap: 6px; color: var(--text-secondary); }
     input { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text-primary); }
     button { padding: 10px; border: none; border-radius: 8px; background: var(--accent); color: #00140d; font-weight: 700; cursor: pointer; }

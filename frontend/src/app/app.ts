@@ -1,5 +1,5 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, OnInit, inject, computed, signal } from '@angular/core';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './services/auth.service';
 
@@ -8,7 +8,8 @@ import { AuthService } from './services/auth.service';
   standalone: true,
   imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   template: `
-    <div class="app">
+    <div class="app" [class.no-nav]="!showNav()">
+      @if (showNav()) {
       <nav class="navbar">
         <div class="navbar__brand">
           <span class="navbar__logo">F</span>
@@ -86,6 +87,7 @@ import { AuthService } from './services/auth.service';
           </button>
         </div>
       </nav>
+      }
       <main class="main">
         <router-outlet></router-outlet>
       </main>
@@ -95,9 +97,18 @@ import { AuthService } from './services/auth.service';
 })
 export class App implements OnInit {
   private auth = inject(AuthService);
+  private router = inject(Router);
   menuOpen = signal(false);
 
+  // Mostrar navbar basado en si hay usuario autenticado Y no estamos en rutas públicas
+  showNav = computed(() => {
+    const isAuth = this.auth.isAuthenticated();
+    const url = this.router.url;
+    return isAuth && !url.startsWith('/login') && !url.startsWith('/register');
+  });
+
   ngOnInit() {
+    // Verificar sesión al iniciar
     this.auth.checkSession().subscribe();
   }
   
