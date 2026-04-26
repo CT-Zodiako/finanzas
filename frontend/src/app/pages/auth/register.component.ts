@@ -16,24 +16,35 @@ import { AuthService } from '../../services/auth.service';
 
         <label>
           Nombre
-          <input type="text" formControlName="nombre" />
+          <input type="text" formControlName="nombre" placeholder="Tu nombre" />
+          @if (form.controls.nombre.invalid && form.controls.nombre.touched) {
+            <span class="hint">Mínimo 2 caracteres</span>
+          }
         </label>
 
         <label>
           Email
-          <input type="email" formControlName="email" />
+          <input type="email" formControlName="email" placeholder="tu@email.com" />
+          @if (form.controls.email.invalid && form.controls.email.touched) {
+            <span class="hint">Ingresa un email válido</span>
+          }
         </label>
 
         <label>
           Contraseña
-          <input type="password" formControlName="password" />
+          <input type="password" formControlName="password" placeholder="Mínimo 8 caracteres" />
+          @if (form.controls.password.invalid && form.controls.password.touched) {
+            <span class="hint">Mínimo 8 caracteres</span>
+          }
         </label>
 
         @if (error()) {
           <p class="error">{{ error() }}</p>
         }
 
-        <button type="submit" [disabled]="form.invalid || auth.loading()">Registrarme</button>
+        <button type="submit" [disabled]="form.invalid || auth.loading()">
+          {{ auth.loading() ? 'Registrando...' : 'Registrarme' }}
+        </button>
 
         <p>¿Ya tenés cuenta? <a routerLink="/login">Iniciá sesión</a></p>
       </form>
@@ -44,7 +55,10 @@ import { AuthService } from '../../services/auth.service';
     .auth-card { width: 100%; max-width: 420px; display: grid; gap: 12px; padding: 24px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
     label { display: grid; gap: 6px; color: var(--text-secondary); }
     input { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text-primary); }
+    input::placeholder { color: var(--text-secondary); opacity: 0.6; }
     button { padding: 10px; border: none; border-radius: 8px; background: var(--accent); color: #00140d; font-weight: 700; cursor: pointer; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .hint { font-size: 0.8rem; color: var(--text-secondary); }
     .error { color: var(--danger); }
   `]
 })

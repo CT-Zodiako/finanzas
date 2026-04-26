@@ -123,5 +123,6 @@ export class App implements OnInit {
   logout() {
     this.auth.logout();
     this.closeMenu();
+    this.router.navigate(['/login']);
   }
 }
