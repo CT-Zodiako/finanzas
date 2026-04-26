@@ -13,11 +13,11 @@ class DebtRepository:
         self.db.refresh(debt)
         return debt
 
-    def get_all(self) -> List[Debt]:
-        return self.db.query(Debt).all()
+    def get_all(self, user_id: int) -> List[Debt]:
+        return self.db.query(Debt).filter(Debt.user_id == user_id).all()
 
-    def get_by_id(self, debt_id: int) -> Optional[Debt]:
-        return self.db.query(Debt).filter(Debt.id == debt_id).first()
+    def get_by_id(self, debt_id: int, user_id: int) -> Optional[Debt]:
+        return self.db.query(Debt).filter(Debt.id == debt_id, Debt.user_id == user_id).first()
 
     def update(self, debt: Debt) -> Debt:
         self.db.commit()
@@ -28,9 +28,9 @@ class DebtRepository:
         self.db.delete(debt)
         self.db.commit()
 
-    def get_active(self) -> List[Debt]:
-        return self.db.query(Debt).filter(Debt.is_active == True).all()
+    def get_active(self, user_id: int) -> List[Debt]:
+        return self.db.query(Debt).filter(Debt.user_id == user_id, Debt.is_active == True).all()
 
-    def get_total_debt(self) -> float:
-        result = self.db.query(Debt).filter(Debt.is_active == True).all()
+    def get_total_debt(self, user_id: int) -> float:
+        result = self.db.query(Debt).filter(Debt.user_id == user_id, Debt.is_active == True).all()
         return sum(float(d.remaining_amount) for d in result)

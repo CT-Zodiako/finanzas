@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Numeric, Boolean, Date, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Numeric, Boolean, Date, Enum as SQLEnum, ForeignKey, Index
 import enum
 from app.models.base import BaseModel
 
@@ -12,6 +12,9 @@ class FrequencyEnum(str, enum.Enum):
 
 class Income(BaseModel):
     __tablename__ = "incomes"
+    __table_args__ = (Index("ix_incomes_user_id", "user_id"),)
+
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     name = Column(String(255), nullable=False)
     amount = Column(Numeric(12, 2), nullable=False)

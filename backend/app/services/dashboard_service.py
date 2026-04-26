@@ -16,19 +16,19 @@ class DashboardService:
         self.fixed_expense_repo = FixedExpenseRepository(db)
         self.daily_expense_repo = DailyExpenseRepository(db)
 
-    def get_summary(self) -> DashboardSummary:
-        total_incomes = Decimal(str(self.income_repo.get_total_income()))
-        total_fixed_expenses = Decimal(str(self.fixed_expense_repo.get_total_fixed_expenses()))
+    def get_summary(self, user_id: int) -> DashboardSummary:
+        total_incomes = Decimal(str(self.income_repo.get_total_income(user_id)))
+        total_fixed_expenses = Decimal(str(self.fixed_expense_repo.get_total_fixed_expenses(user_id)))
         
         today = date.today()
         start_of_month = today.replace(day=1)
         total_daily_expenses = Decimal(str(
-            self.daily_expense_repo.get_total_daily_expenses(start_of_month, today)
+            self.daily_expense_repo.get_total_daily_expenses(user_id, start_of_month, today)
         ))
-        
+
         from app.services.debt_service import DebtService as DebtSvc
         debt_service = DebtSvc(self.debt_repo.db)
-        debt_summary = debt_service.get_summary()
+        debt_summary = debt_service.get_summary(user_id)
         
         total_debts = Decimal(str(debt_summary["saldo_actual"]))
         total_debts_with_installments = Decimal(str(debt_summary.get("costo_total", debt_summary["saldo_actual"])))
@@ -46,8 +46,8 @@ class DashboardService:
             monthly_income=monthly_income
         )
 
-    def get_category_expenses(self) -> List[CategorySummary]:
-        daily_expenses = self.daily_expense_repo.get_all()
+    def get_category_expenses(self, user_id: int) -> List[CategorySummary]:
+        daily_expenses = self.daily_expense_repo.get_all(user_id)
         total = sum(float(e.amount) for e in daily_expenses)
         
         category_totals = {}

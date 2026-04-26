@@ -1,9 +1,12 @@
-from sqlalchemy import Column, Integer, String, Numeric, Float, Boolean, Date
+from sqlalchemy import Column, Integer, String, Numeric, Float, Boolean, Date, ForeignKey, Index
 from app.models.base import BaseModel
 
 
 class Debt(BaseModel):
     __tablename__ = "debts"
+    __table_args__ = (Index("ix_debts_user_id", "user_id"),)
+
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     name = Column(String(255), nullable=False)
     creditor = Column(String(255), nullable=True)

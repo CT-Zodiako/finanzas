@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -84,8 +85,13 @@ import { CommonModule } from '@angular/common';
   `,
   styleUrl: './app.scss'
 })
-export class App {
+export class App implements OnInit {
+  private auth = inject(AuthService);
   menuOpen = signal(false);
+
+  ngOnInit() {
+    this.auth.checkSession().subscribe();
+  }
   
   toggleMenu() {
     this.menuOpen.update(v => !v);

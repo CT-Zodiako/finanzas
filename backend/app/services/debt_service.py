@@ -10,24 +10,24 @@ class DebtService:
     def __init__(self, db: Session):
         self.repository = DebtRepository(db)
 
-    def create(self, debt_data: DebtCreate) -> Debt:
+    def create(self, debt_data: DebtCreate, user_id: int) -> Debt:
         data = debt_data.model_dump()
         self._normalize_debt_data(data)
         if data.get('fecha_limite') and isinstance(data['fecha_limite'], str):
             from datetime import datetime
             data['fecha_limite'] = datetime.strptime(data['fecha_limite'], '%Y-%m-%d').date()
         
-        debt = Debt(**data)
+        debt = Debt(**data, user_id=user_id)
         return self.repository.create(debt)
 
-    def get_all(self):
-        return self.repository.get_all()
+    def get_all(self, user_id: int):
+        return self.repository.get_all(user_id)
 
-    def get_by_id(self, debt_id: int):
-        return self.repository.get_by_id(debt_id)
+    def get_by_id(self, debt_id: int, user_id: int):
+        return self.repository.get_by_id(debt_id, user_id)
 
-    def update(self, debt_id: int, debt_data: DebtUpdate):
-        debt = self.repository.get_by_id(debt_id)
+    def update(self, debt_id: int, debt_data: DebtUpdate, user_id: int):
+        debt = self.repository.get_by_id(debt_id, user_id)
         if not debt:
             return None
         
@@ -42,15 +42,15 @@ class DebtService:
         
         return self.repository.update(debt)
 
-    def delete(self, debt_id: int):
-        debt = self.repository.get_by_id(debt_id)
+    def delete(self, debt_id: int, user_id: int):
+        debt = self.repository.get_by_id(debt_id, user_id)
         if not debt:
             return False
         self.repository.delete(debt)
         return True
 
-    def make_payment(self, debt_id: int, payment_amount: Decimal):
-        debt = self.repository.get_by_id(debt_id)
+    def make_payment(self, debt_id: int, payment_amount: Decimal, user_id: int):
+        debt = self.repository.get_by_id(debt_id, user_id)
         if not debt:
             return None
         
@@ -65,11 +65,11 @@ class DebtService:
         
         return self.repository.update(debt)
 
-    def get_total_debt(self) -> float:
-        return self.repository.get_total_debt()
+    def get_total_debt(self, user_id: int) -> float:
+        return self.repository.get_total_debt(user_id)
 
-    def get_summary(self) -> dict:
-        debts = self.repository.get_active()
+    def get_summary(self, user_id: int) -> dict:
+        debts = self.repository.get_active(user_id)
         saldo_actual = 0
         total_cuotas_mensuales = 0
         costo_total_todas = 0

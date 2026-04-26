@@ -7,7 +7,7 @@ from pathlib import Path
 from app.api.v1.router import api_router
 from app.core.database import init_db
 from app.core.config import settings
-from app.seed import seed_database_if_empty
+from app.seed import seed_database_if_empty, ensure_bootstrap_user_and_backfill
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -32,6 +32,7 @@ def startup_event():
     init_db()
     # Cargar datos iniciales si la DB está vacía
     seed_database_if_empty()
+    ensure_bootstrap_user_and_backfill()
 
 
 @app.get("/health")
@@ -55,7 +56,7 @@ if static_dir.exists():
     @app.get("/{route}")
     async def serve_spa_fallback(route: str):
         # Rutas conocidas que NO son de API - estas son rutas de SPA
-        spa_routes = ['debts', 'incomes', 'fixed-expenses', 'daily-expenses', 'dashboard', 'budget', 'optimize']
+        spa_routes = ['login', 'register', 'debts', 'incomes', 'fixed-expenses', 'daily-expenses', 'dashboard', 'budget', 'optimize']
         
         if route in spa_routes:
             return FileResponse(str(static_dir / "index.html"))

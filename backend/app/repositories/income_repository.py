@@ -13,11 +13,11 @@ class IncomeRepository:
         self.db.refresh(income)
         return income
 
-    def get_all(self) -> List[Income]:
-        return self.db.query(Income).all()
+    def get_all(self, user_id: int) -> List[Income]:
+        return self.db.query(Income).filter(Income.user_id == user_id).all()
 
-    def get_by_id(self, income_id: int) -> Optional[Income]:
-        return self.db.query(Income).filter(Income.id == income_id).first()
+    def get_by_id(self, income_id: int, user_id: int) -> Optional[Income]:
+        return self.db.query(Income).filter(Income.id == income_id, Income.user_id == user_id).first()
 
     def update(self, income: Income) -> Income:
         self.db.commit()
@@ -28,9 +28,9 @@ class IncomeRepository:
         self.db.delete(income)
         self.db.commit()
 
-    def get_recurring(self) -> List[Income]:
-        return self.db.query(Income).filter(Income.is_recurring == True).all()
+    def get_recurring(self, user_id: int) -> List[Income]:
+        return self.db.query(Income).filter(Income.user_id == user_id, Income.is_recurring == True).all()
 
-    def get_total_income(self) -> float:
-        result = self.db.query(Income).all()
+    def get_total_income(self, user_id: int) -> float:
+        result = self.db.query(Income).filter(Income.user_id == user_id).all()
         return sum(float(i.amount) for i in result)

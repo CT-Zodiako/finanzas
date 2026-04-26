@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.core.database import get_db
+from app.core.security import get_current_user
+from app.models.user import User
 from app.services.optimize_service import OptimizeService
 from app.schemas.optimize import OptimizeInput, OptimizeResult, AlertsResult
 from app.repositories.debt_repository import DebtRepository
@@ -14,21 +16,22 @@ router = APIRouter(prefix="/optimize", tags=["Optimize"])
 @router.post("/calculate", response_model=OptimizeResult)
 def calculate_optimization(
     input_data: OptimizeInput,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     service = OptimizeService()
     return service.calculate(input_data)
 
 
 @router.post("/from-database", response_model=OptimizeResult)
-def calculate_from_database(db: Session = Depends(get_db)):
+def calculate_from_database(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     income_repo = IncomeRepository(db)
     fixed_repo = FixedExpenseRepository(db)
     debt_repo = DebtRepository(db)
-    
-    incomes = income_repo.get_recurring()
-    fixed_expenses = fixed_repo.get_active()
-    debts = debt_repo.get_active()
+
+    incomes = income_repo.get_recurring(current_user.id)
+    fixed_expenses = fixed_repo.get_active(current_user.id)
+    debts = debt_repo.get_active(current_user.id)
     
     ingreso_mensual = sum(float(i.amount) for i in incomes)
     gastos_fijos = sum(float(e.amount) for e in fixed_expenses)
@@ -61,7 +64,8 @@ def calculate_from_database(db: Session = Depends(get_db)):
 @router.post("/alerts", response_model=AlertsResult)
 def get_alerts(
     input_data: OptimizeInput,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     service = OptimizeService()
     return service.get_alerts(input_data)

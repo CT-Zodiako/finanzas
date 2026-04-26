@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
+from app.core.security import get_current_user
+from app.models.user import User
 from app.services.debt_service import DebtService
 from app.schemas.debt import DebtCreate, DebtUpdate, DebtResponse, DebtPayment
 from app.mappers.debt_mapper import DebtMapper
@@ -10,56 +12,56 @@ router = APIRouter(prefix="/debts", tags=["Debts"])
 
 
 @router.post("")
-def create_debt(debt: DebtCreate, db: Session = Depends(get_db)):
+def create_debt(debt: DebtCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     service = DebtService(db)
-    new_debt = service.create(debt)
+    new_debt = service.create(debt, current_user.id)
     return DebtMapper.to_response(new_debt)
 
 
 @router.get("")
-def get_all_debts(db: Session = Depends(get_db)):
+def get_all_debts(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     service = DebtService(db)
-    debts = service.get_all()
+    debts = service.get_all(current_user.id)
     return [DebtMapper.to_response(d) for d in debts]
 
 
-@router.get("{debt_id}")
-def get_debt(debt_id: int, db: Session = Depends(get_db)):
+@router.get("/{debt_id}")
+def get_debt(debt_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     service = DebtService(db)
-    debt = service.get_by_id(debt_id)
+    debt = service.get_by_id(debt_id, current_user.id)
     if not debt:
         raise HTTPException(status_code=404, detail="Debt not found")
     return DebtMapper.to_response(debt)
 
 
-@router.put("{debt_id}")
-def update_debt(debt_id: int, debt: DebtUpdate, db: Session = Depends(get_db)):
+@router.put("/{debt_id}")
+def update_debt(debt_id: int, debt: DebtUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     service = DebtService(db)
-    updated_debt = service.update(debt_id, debt)
+    updated_debt = service.update(debt_id, debt, current_user.id)
     if not updated_debt:
         raise HTTPException(status_code=404, detail="Debt not found")
     return DebtMapper.to_response(updated_debt)
 
 
-@router.delete("{debt_id}")
-def delete_debt(debt_id: int, db: Session = Depends(get_db)):
+@router.delete("/{debt_id}")
+def delete_debt(debt_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     service = DebtService(db)
-    deleted = service.delete(debt_id)
+    deleted = service.delete(debt_id, current_user.id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Debt not found")
     return {"message": "Debt deleted successfully"}
 
 
-@router.post("{debt_id}/payment")
-def make_payment(debt_id: int, payment: DebtPayment, db: Session = Depends(get_db)):
+@router.post("/{debt_id}/payment")
+def make_payment(debt_id: int, payment: DebtPayment, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     service = DebtService(db)
-    updated_debt = service.make_payment(debt_id, payment.payment_amount)
+    updated_debt = service.make_payment(debt_id, payment.payment_amount, current_user.id)
     if not updated_debt:
         raise HTTPException(status_code=404, detail="Debt not found")
     return DebtMapper.to_response(updated_debt)
 
 
-@router.get("summary")
-def get_debt_summary(db: Session = Depends(get_db)):
+@router.get("/summary")
+def get_debt_summary(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     service = DebtService(db)
-    return service.get_summary()
+    return service.get_summary(current_user.id)

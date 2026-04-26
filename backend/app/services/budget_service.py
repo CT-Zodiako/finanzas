@@ -8,8 +8,8 @@ class BudgetService:
     def __init__(self, db: Session):
         self.income_repo = IncomeRepository(db)
 
-    def get_recommendations(self) -> BudgetResponse:
-        total_income = Decimal(str(self.income_repo.get_total_income()))
+    def get_recommendations(self, user_id: int) -> BudgetResponse:
+        total_income = Decimal(str(self.income_repo.get_total_income(user_id)))
         
         recommendations = [
             BudgetRecommendation(

@@ -6,6 +6,14 @@ NO se vuelve a ejecutar una vez cargado los datos.
 import sqlite3
 from pathlib import Path
 
+from app.core.database import SessionLocal
+from app.core.security import hash_password
+from app.models.user import User
+from app.models.income import Income
+from app.models.debt import Debt
+from app.models.fixed_expense import FixedExpense
+from app.models.daily_expense import DailyExpense
+
 # Ruta al archivo SQL de backup
 BACKUP_SQL = Path(__file__).parent.parent / "seed_data.sql"
 
@@ -78,6 +86,34 @@ def seed_database_if_empty(db_path: str = "finanzas.db"):
         conn.close()
         print(f"⚠️ Archivo seed_data.sql no encontrado en {BACKUP_SQL}")
         return False
+
+
+def ensure_bootstrap_user_and_backfill() -> None:
+    """Crea usuario Cristian y asigna user_id a datos legacy sin dueño."""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.email == "cristianjvz98@gmail.com").first()
+        if not user:
+            user = User(
+                nombre="Cristian",
+                email="cristianjvz98@gmail.com",
+                password_hash=hash_password("Tgrmw1k"),
+                rol="admin",
+                is_active=True,
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            print(f"✅ Usuario bootstrap creado: christianjvz98@gmail.com / Tgrmw1k")
+
+        db.query(Income).filter(Income.user_id.is_(None)).update({"user_id": user.id})
+        db.query(Debt).filter(Debt.user_id.is_(None)).update({"user_id": user.id})
+        db.query(FixedExpense).filter(FixedExpense.user_id.is_(None)).update({"user_id": user.id})
+        db.query(DailyExpense).filter(DailyExpense.user_id.is_(None)).update({"user_id": user.id})
+        db.commit()
+        print(f"📊 Datos legacy asignados al usuario ID: {user.id}")
+    finally:
+        db.close()
 
 
 if __name__ == "__main__":
