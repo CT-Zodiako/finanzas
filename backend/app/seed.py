@@ -92,6 +92,16 @@ def ensure_bootstrap_user_and_backfill() -> None:
     """Crea usuario Cristian y asigna user_id a datos legacy sin dueño."""
     db = SessionLocal()
     try:
+        # 1. Agregar columnas user_id si no existen (migración automática)
+        from sqlalchemy import text
+        with db.connection() as conn:
+            for table in ["incomes", "debts", "fixed_expenses", "daily_expenses"]:
+                try:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN user_id INTEGER"))
+                except Exception:
+                    pass  # Ya existe
+            conn.commit()
+
         user = db.query(User).filter(User.email == "cristianjvz98@gmail.com").first()
         if not user:
             user = User(
